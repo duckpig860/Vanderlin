@@ -102,6 +102,9 @@
 	var/meat_to_give = /obj/item/reagent_containers/food/snacks/meat/steak
 	var/rotten = FALSE
 
+	/// The amount of blood this can restore when used with Hunter's Will
+	var/blood_value = 0
+
 //quality from butchering, 0 is bad, 1 is normal, 2 is good, -1 means its rotten and useless
 /obj/item/natural/head/proc/ButcheringResults(butchering_quality)
 	switch(butchering_quality)
@@ -128,12 +131,12 @@
 	if(held_item)
 		var/path_to_check = ispath(held_item) ? held_item : held_item.type
 		if(ispath(path_to_check, /obj/item/weapon/knife))
-			var/butchering_skill = user.get_skill_level(/datum/skill/labor/butchering, TRUE)
+			var/butchering_skill = GET_MOB_SKILL_VALUE_OLD(user, /datum/attribute/skill/labor/butchering)
 			var/used_time = 8
 			used_time = (used_time - 0.5 * butchering_skill) SECONDS
 			visible_message("[user] begins to butcher \the [src].")
 			playsound(src, 'sound/foley/gross.ogg', 100, FALSE)
-			var/amt2raise = user.STAINT/4
+			var/amt2raise = GET_MOB_ATTRIBUTE_VALUE(user, STAT_INTELLIGENCE)/4
 			if(do_after(user, used_time, src))
 				var/obj/item/I = new meat_to_give(get_turf(src))
 				if(rotten && istype(I,/obj/item/reagent_containers/food/snacks))
@@ -141,7 +144,7 @@
 					F.become_rotten()
 
 				new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-				user.adjust_experience(/datum/skill/labor/butchering, amt2raise, FALSE)
+				user.adjust_experience(/datum/attribute/skill/labor/butchering, amt2raise, FALSE)
 				qdel(src)
 	..()
 
@@ -152,6 +155,7 @@
 	headpricemin = 3
 	headpricemax = 7
 	sellprice = 5
+	blood_value = BLOOD_VOLUME_SURVIVE
 
 /obj/item/natural/head/saiga
 	name = "saiga head"
@@ -159,6 +163,7 @@
 	icon_state = "saigahead"
 	headprice = 3
 	sellprice = 3
+	blood_value = BLOOD_VOLUME_BAD
 
 /obj/item/natural/head/troll
 	name = "troll head"
@@ -170,6 +175,7 @@
 	headpricemin = 80
 	headpricemax = 230
 	sellprice = 155
+	blood_value = BLOOD_VOLUME_OKAY
 
 /obj/item/natural/head/troll/apply_components()
 	AddComponent(/datum/component/two_handed, require_twohands=TRUE)
@@ -204,6 +210,7 @@
 	icon_state = "direbearhead"
 	layer = 3.1
 	sellprice = 20
+	blood_value = BLOOD_VOLUME_SAFE
 
 /obj/item/natural/head/fox
 	name = "venard head"
@@ -212,6 +219,7 @@
 	layer = 3.1
 	grid_height = 32
 	sellprice = 6
+	blood_value = BLOOD_VOLUME_SURVIVE
 
 /obj/item/natural/head/spider
 	name = "beespider head"
@@ -240,6 +248,7 @@
 	headpricemin = 3
 	headpricemax = 7
 	sellprice = 5
+	blood_value = BLOOD_VOLUME_SURVIVE
 
 /obj/item/natural/head/mole/apply_components()
 	AddComponent(/datum/component/two_handed, require_twohands=TRUE)
@@ -250,6 +259,7 @@
 	icon_state = "gotehead"
 	headprice = 2
 	sellprice = 2
+	blood_value = BLOOD_VOLUME_SURVIVE / 2
 
 //RTD make this a storage item and make clickign on animals with things put it in storage
 /obj/item/natural/saddle
@@ -286,7 +296,7 @@
 	. = ..()
 	if(.)
 		return
-	var/damage = user.STASTR*0.5
+	var/damage = GET_MOB_ATTRIBUTE_VALUE(user, STAT_STRENGTH)*0.5
 	if(HAS_TRAIT(user, TRAIT_STRONGBITE))
 		damage = damage*2
 	user.do_attack_animation(src, ATTACK_EFFECT_BITE)
@@ -309,7 +319,7 @@
 	else
 		visible_message(span_danger("[user] bites [src]!"))
 	if(HAS_TRAIT(user, TRAIT_POISONBITE) && src.reagents)
-		var/poison = user.STACON/2
+		var/poison = GET_MOB_ATTRIBUTE_VALUE(user, STAT_CONSTITUTION)/2
 		src.reagents.add_reagent(/datum/reagent/toxin/venom, poison/2)
 		src.reagents.add_reagent(/datum/reagent/medicine/soporpot, poison)
 		to_chat(user, span_warning("Your fangs inject venom into [src]!"))
